@@ -1,0 +1,162 @@
+---
+# ConfigMap for environment variables
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dumbassets-config
+  namespace: default
+data:
+  NODE_ENV: "production"
+  DEBUG: "true"
+  SITE_TITLE: "DumbAssets"
+  BASE_URL: "http://localhost:3000"
+  DUMBASSETS_PIN: "2389071638"
+  ALLOWED_ORIGINS: "*"
+  APPRISE_URL: ""
+
+---
+# PersistentVolumeClaim for data storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dumbassets-data-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  # Uncomment and modify if you have a specific storage class
+  # storageClassName: your-storage-class
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dumbassets
+  namespace: default
+  labels:
+    app: dumbassets
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dumbassets
+  template:
+    metadata:
+      labels:
+        app: dumbassets
+    spec:
+      containers:
+      - name: dumbassets
+        image: dumbwareio/dumbassets:latest
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: dumbassets-config
+              key: NODE_ENV
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: dumbassets-config
+              key: DEBUG
+        - name: SITE_TITLE
+          valueFrom:
+            configMapKeyRef:
+              name: dumbassets-config
+              key: SITE_TITLE
+        - name: BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: dumbassets-config
+              key: BASE_URL
+        - name: DUMBASSETS_PIN
+          valueFrom:
+            configMapKeyRef:
+              name: dumbassets-config
+              key: DUMBASSETS_PIN
+        - name: ALLOWED_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: dumbassets-config
+              key: ALLOWED_ORIGINS
+        - name: APPRISE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: dumbassets-config
+              key: APPRISE_URL
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: dumbassets-data-pvc
+      restartPolicy: Always
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: dumbassets-service
+  namespace: default
+  labels:
+    app: dumbassets
+spec:
+  selector:
+    app: dumbassets
+  ports:
+  - name: http
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dumbassets-ingress
+  namespace: default
+  annotations:
+    # Add ingress controller specific annotations here
+    # nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: dumbassets.k3s.syntaxandsymbols.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dumbassets-service
+            port:
+              number: 3000

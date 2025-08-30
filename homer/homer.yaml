@@ -1,0 +1,157 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homer-config
+  namespace: default
+data:
+  config.yml: |
+    title: "Dondon's Homelab"
+    subtitle: "Where my services be at"
+    logo: "logo.png"
+
+    header: true
+    footer: '<p>Created with <span class="has-text-danger">❤️</span> for my homelab</p>'
+
+    theme: default
+    colors:
+      light:
+        highlight-primary: "#3367d6"
+        highlight-secondary: "#4285f4"
+        highlight-hover: "#5a95f5"
+        background: "#f5f5f5"
+        card-background: "#ffffff"
+        text: "#363636"
+        text-header: "#ffffff"
+        text-title: "#303030"
+        text-subtitle: "#424242"
+        card-shadow: rgba(0, 0, 0, 0.1)
+        link-hover: "#363636"
+      dark:
+        highlight-primary: "#3367d6"
+        highlight-secondary: "#4285f4"
+        highlight-hover: "#5a95f5"
+        background: "#131313"
+        card-background: "#2b2b2b"
+        text: "#eaeaea"
+        text-header: "#ffffff"
+        text-title: "#fafafa"
+        text-subtitle: "#f5f5f5"
+        card-shadow: rgba(0, 0, 0, 0.4)
+        link-hover: "#ffdd57"
+
+    links:
+      - name: "GitHub: donhamiltoniii"
+        icon: "fab fa-github"
+        url: "https://github.com/donhamiltoniii"
+        target: "_blank"
+
+    services:
+      - name: "Applications"
+        icon: "fas fa-cloud"
+        items:
+          - name: "WhoAmI"
+            logo: "assets/tools/sample.png"
+            subtitle: "Credentials"
+            tag: "infrastructure"
+            url: "https://whoami.k3s.syntaxandsymbols.com"
+            target: "_blank"
+          - name: "Uptime Kuma"
+            logo: "assets/tools/sample.png"
+            subtitle: "Uptime Dashboard"
+            tag: "monitoring"
+            url: "https://uptime.k3s.syntaxandsymbols.com"
+            target: "_blank"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homer
+  namespace: default
+  labels:
+    app: homer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homer
+  template:
+    metadata:
+      labels:
+        app: homer
+    spec:
+      containers:
+      - name: homer
+        image: b4bz/homer:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: INIT_ASSETS
+          value: "1"
+        volumeMounts:
+        - name: config
+          mountPath: /www/assets/config.yml
+          subPath: config.yml
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: config
+        configMap:
+          name: homer-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homer-service
+  namespace: default
+  labels:
+    app: homer
+spec:
+  selector:
+    app: homer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homer-ingress
+  namespace: default
+  annotations:
+spec:
+  rules:
+  - host: homer.k3s.syntaxandsymbols.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: homer-service
+            port:
+              number: 80
