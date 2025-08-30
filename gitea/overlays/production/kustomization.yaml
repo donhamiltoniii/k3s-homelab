@@ -7,8 +7,8 @@ resources:
 patchesStrategicMerge:
   - ingress.yaml
 
-configMapGenerator:
-  - name: gitea-config
-    files:
-      - app.ini=app.ini
-    behavior: replace
+#configMapGenerator:
+#  - name: gitea-config
+#    files:
+#      - app.ini=app.ini
+#    behavior: replace
