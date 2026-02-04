@@ -155,7 +155,7 @@ spec:
         - name: immich-server
           image: ghcr.io/immich-app/immich-server:release
           ports:
-            - containerPort: 3001
+            - containerPort: 2283
           env:
             - name: IMMICH_WORKERS_INCLUDE
               value: "api"
@@ -183,7 +183,7 @@ spec:
   type: ClusterIP
   ports:
     - port: 80
-      targetPort: 3001
+      targetPort: 2283
   selector:
     app: immich-server
 ---
