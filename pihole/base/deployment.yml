@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pihole
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pihole
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pihole
+    spec:
+      containers:
+        - name: pihole
+          image: pihole/pihole:latest
+          env:
+            - name: TZ
+              value: "UTC"
+            - name: WEBPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-secret
+                  key: webpassword
+            - name: DNS1
+              value: "1.1.1.1"
+            - name: DNS2
+              value: "1.0.0.1"
+          ports:
+            - containerPort: 80   # web UI
+            - containerPort: 53   # DNS (TCP/UDP)
+          volumeMounts:
+            - name: pihole-data
+              mountPath: /etc/pihole
+            - name: dnsmasq-data
+              mountPath: /etc/dnsmasq.d
+      volumes:
+        - name: pihole-data
+          persistentVolumeClaim:
+            claimName: pihole-pvc
+        - name: dnsmasq-data
+          emptyDir: {}

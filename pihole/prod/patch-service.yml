@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      nodePort: 30080               # optional – you can omit to let k8s pick one
+    - name: dns-tcp
+      port: 53
+      protocol: TCP
+      targetPort: 53
+      nodePort: 30053
+    - name: dns-udp
+      port: 53
+      protocol: UDP
+      targetPort: 53
+      nodePort: 30053

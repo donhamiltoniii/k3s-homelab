@@ -15,17 +15,17 @@ spec:
         app: uptime
     spec:
       containers:
-      - name: uptime
-        image: louislam/uptime-kuma:latest
-        ports:
-        - containerPort: 3001
-        volumeMounts:
-        - name: uptime-data
-          mountPath: /app/data
+        - name: uptime
+          image: louislam/uptime-kuma:latest
+          ports:
+            - containerPort: 3001
+          volumeMounts:
+            - name: uptime-data
+              mountPath: /app/data
       volumes:
-      - name: uptime-data
-        persistentVolumeClaim:
-          claimName: uptime-pvc
+        - name: uptime-data
+          persistentVolumeClaim:
+            claimName: uptime-pvc
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -47,8 +47,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - port: 80
-    targetPort: 3001
+    - port: 80
+      targetPort: 3001
   selector:
     app: uptime
 ---
@@ -59,13 +59,13 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-  - host: uptime.k3s.syntaxandsymbols.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: uptime
-            port:
-              number: 80
+    - host: uptime.k3s.syntaxandsymbols.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: uptime
+                port:
+                  number: 80

@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yml
+  - service.yml
+  - configmap.yml
+  - pvc.yml
+  # Uncomment if you want an Ingress for the UI
+  # - ingress.yml
+
+commonLabels:
+  app.kubernetes.io/name: pihole
+  app.kubernetes.io/component: dns
+
+namespace: pihole   # create this namespace once (or let Argo CD do it)

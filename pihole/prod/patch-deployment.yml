@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pihole
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3s-master   # or any label you prefer
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          effect: "NoSchedule"

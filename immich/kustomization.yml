@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: immich
+
+commonLabels:
+  app.kubernetes.io/name: immich
+  app.kubernetes.io/part-of: immich
+
+configMapGenerator:
+  - name: immich-config
+    literals:
+      - DB_HOSTNAME=immich-postgres
+      - DB_USERNAME=immich
+      - DB_DATABASE_NAME=immich
+      - REDIS_HOSTNAME=immich-redis
+      - IMMICH_MACHINE_LEARNING_URL=http://immich-machine-learning:3003
+
+secretGenerator:
+  - name: immich-secrets
+    literals:
+      - DB_PASSWORD=immich_db_password_change_me
+
+resources:
+  - resources.yaml

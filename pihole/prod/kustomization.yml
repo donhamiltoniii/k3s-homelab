@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+resources:
+  - secret.yaml          # admin password, TLS certs, etc.
+  - patch-service.yaml   # change Service type to LoadBalancer (optional)
+
+patchesStrategicMerge:
+  - patch-deployment.yaml   # e.g., nodeSelector, tolerations for k3s
+
+namespace: pihole
