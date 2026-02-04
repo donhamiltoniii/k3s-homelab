@@ -117,7 +117,7 @@ spec:
     spec:
       containers:
         - name: redis
-          image: redis:6.2-alpine
+          image: redis:7-alpine
           ports:
             - containerPort: 6379
 ---
@@ -154,6 +154,7 @@ spec:
       containers:
         - name: immich-server
           image: ghcr.io/immich-app/immich-server:release
+          args: ["immich"]
           ports:
             - containerPort: 3001
           envFrom:
@@ -183,6 +184,40 @@ spec:
       targetPort: 3001
   selector:
     app: immich-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-microservices
+  namespace: immich
+  labels:
+    app: immich-microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-microservices
+  template:
+    metadata:
+      labels:
+        app: immich-microservices
+    spec:
+      containers:
+        - name: immich-microservices
+          image: ghcr.io/immich-app/immich-server:release
+          args: ["microservices"]
+          envFrom:
+            - configMapRef:
+                name: immich-config
+            - secretRef:
+                name: immich-secrets
+          volumeMounts:
+            - name: upload-data
+              mountPath: /usr/src/app/upload
+      volumes:
+        - name: upload-data
+          persistentVolumeClaim:
+            claimName: immich-upload-pvc
 ---
 apiVersion: apps/v1
 kind: Deployment
