@@ -19,7 +19,7 @@ configMapGenerator:
 secretGenerator:
   - name: immich-secrets
     literals:
-      - DB_PASSWORD=immich_db_password_change_me
+      - DB_PASSWORD="$9K3FKGZ7YZtq^9hPI6#"
 
 resources:
   - resources.yaml
