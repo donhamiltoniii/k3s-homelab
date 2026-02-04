@@ -16,10 +16,6 @@ configMapGenerator:
       - REDIS_HOSTNAME=immich-redis
       - IMMICH_MACHINE_LEARNING_URL=http://immich-machine-learning:3003
 
-secretGenerator:
-  - name: immich-secrets
-    literals:
-      - DB_PASSWORD="$9K3FKGZ7YZtq^9hPI6#"
-
 resources:
+  - immich-sealed-secret.yaml
   - resources.yaml
