@@ -1,0 +1,16 @@
+=== IMMICH SERVER LOGS ===
+zsh: command not found: kubectl
+
+=== IMMICH SERVER PREVIOUS LOGS ===
+zsh: command not found: kubectl
+
+=== IMMICH MICROSERVICES LOGS ===
+zsh: command not found: kubectl
+
+=== IMMICH MICROSERVICES PREVIOUS LOGS ===
+zsh: command not found: kubectl
+
+=== POD STATUS ===
+
+=== CHECK BINARIES IN CONTAINER ===
+zsh: command not found: kubectl
