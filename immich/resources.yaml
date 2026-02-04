@@ -154,7 +154,8 @@ spec:
       containers:
         - name: immich-server
           image: ghcr.io/immich-app/immich-server:release
-          args: ["immich"]
+          command: ["/bin/bash"]
+          args: ["-c", "/usr/src/app/server/bin/start.sh immich"]
           ports:
             - containerPort: 3001
           envFrom:
@@ -205,7 +206,8 @@ spec:
       containers:
         - name: immich-microservices
           image: ghcr.io/immich-app/immich-server:release
-          args: ["microservices"]
+          command: ["/bin/bash"]
+          args: ["-c", "/usr/src/app/server/bin/start.sh microservices"]
           envFrom:
             - configMapRef:
                 name: immich-config
