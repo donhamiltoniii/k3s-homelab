@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - ollama-statefulset.yaml
   - ollama-service.yaml
-  - open-webui-pvc.yaml
   - open-webui-deployment.yaml
   - open-webui-service.yaml
+  - open-webui-pvc.yaml
+  - ollama-pull-job.yaml
