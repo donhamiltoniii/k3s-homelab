@@ -3,7 +3,7 @@ kind: Kustomization
 
 namespace: ollama
 
-bases:
+resources:
   - ../../base
 
 patches:
