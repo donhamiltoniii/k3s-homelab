@@ -5,6 +5,4 @@ namespace: ollama
 
 resources:
   - ../../base
-
-patches:
-  - path: patches/open-webui-ingress.yaml
+  - open-webui-ingress.yaml
