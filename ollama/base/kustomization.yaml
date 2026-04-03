@@ -3,7 +3,6 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
-  - ollama-pvc.yaml
   - ollama-statefulset.yaml
   - ollama-service.yaml
   - open-webui-pvc.yaml
