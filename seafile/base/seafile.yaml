@@ -78,11 +78,12 @@ spec:
               mountPath: /shared
           readinessProbe:
             httpGet:
-              path: /
+              path: /api2/ping/
               port: 80
             initialDelaySeconds: 60
             periodSeconds: 15
-            failureThreshold: 10
+            timeoutSeconds: 10
+            failureThreshold: 12
           resources:
             requests:
               cpu: 250m
