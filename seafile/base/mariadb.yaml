@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seafile-mariadb
+  labels:
+    app: seafile-mariadb
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: seafile-mariadb
+  template:
+    metadata:
+      labels:
+        app: seafile-mariadb
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:11.4
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: seafile-secrets
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_LOG_CONSOLE
+              value: "true"
+            - name: MARIADB_AUTO_UPGRADE
+              value: "1"
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: db
+              mountPath: /var/lib/mysql
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "mariadb-admin ping -h127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: db
+          persistentVolumeClaim:
+            claimName: seafile-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seafile-mariadb
+spec:
+  selector:
+    app: seafile-mariadb
+  ports:
+    - port: 3306
+      targetPort: 3306

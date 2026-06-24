@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seafile
+  labels:
+    app: seafile
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: seafile
+  template:
+    metadata:
+      labels:
+        app: seafile
+    spec:
+      containers:
+        - name: seafile
+          image: seafileltd/seafile-mc:12.0-latest
+          env:
+            - name: DB_HOST
+              value: seafile-mariadb
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_ROOT_PASSWD
+              valueFrom:
+                secretKeyRef:
+                  name: seafile-secrets
+                  key: MYSQL_ROOT_PASSWORD
+            - name: SEAFILE_MYSQL_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: seafile-secrets
+                  key: SEAFILE_MYSQL_DB_PASSWORD
+            - name: SEAFILE_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: seafile-secrets
+                  key: SEAFILE_ADMIN_EMAIL
+            - name: SEAFILE_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: seafile-secrets
+                  key: SEAFILE_ADMIN_PASSWORD
+            - name: SEAFILE_SERVER_HOSTNAME
+              value: seafile.k3s.syntaxandsymbols.com
+            - name: SEAFILE_SERVER_PROTOCOL
+              value: https
+            - name: TIME_ZONE
+              value: America/New_York
+            - name: INIT_SEAFILE_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: seafile-secrets
+                  key: SEAFILE_ADMIN_EMAIL
+            - name: INIT_SEAFILE_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: seafile-secrets
+                  key: SEAFILE_ADMIN_PASSWORD
+            - name: CACHE_PROVIDER
+              value: redis
+            - name: REDIS_HOST
+              value: seafile-redis
+            - name: REDIS_PORT
+              value: "6379"
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: data
+              mountPath: /shared
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: seafile-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seafile
+spec:
+  selector:
+    app: seafile
+  ports:
+    - port: 80
+      targetPort: 80
