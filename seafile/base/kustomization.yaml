@@ -3,7 +3,8 @@ kind: Kustomization
 namespace: seafile
 resources:
   - namespace.yaml
-  - sealed-secret.yaml
+  - sealed-secret.yaml # was secret.yaml
+  - mariadb-init.yaml # <- new ConfigMap
   - pvc.yaml
   - mariadb.yaml
   - redis.yaml

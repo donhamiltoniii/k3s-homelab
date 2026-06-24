@@ -16,6 +16,9 @@ spec:
       labels:
         app: seafile-mariadb
     spec:
+      # Pin to a node so the local-path PVC stays reachable. Fill in and uncomment:
+      # nodeSelector:
+      #   kubernetes.io/hostname: <node-name>
       containers:
         - name: mariadb
           image: mariadb:11.4
@@ -25,6 +28,16 @@ spec:
                 secretKeyRef:
                   name: seafile-secrets
                   key: MYSQL_ROOT_PASSWORD
+            # Let MariaDB create the seafile app user with the SAME password the
+            # secret defines, so secret == DB user == seafile.conf. This is the
+            # single source of truth; do NOT let Seafile auto-generate it.
+            - name: MYSQL_USER
+              value: seafile
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: seafile-secrets
+                  key: SEAFILE_MYSQL_DB_PASSWORD
             - name: MYSQL_LOG_CONSOLE
               value: "true"
             - name: MARIADB_AUTO_UPGRADE
@@ -34,9 +47,16 @@ spec:
           volumeMounts:
             - name: db
               mountPath: /var/lib/mysql
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
           readinessProbe:
             exec:
-              command: ["sh", "-c", "mariadb-admin ping -h127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD"]
+              command:
+                [
+                  "sh",
+                  "-c",
+                  "mariadb-admin ping -h127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD",
+                ]
             initialDelaySeconds: 20
             periodSeconds: 10
           resources:
@@ -49,6 +69,10 @@ spec:
         - name: db
           persistentVolumeClaim:
             claimName: seafile-db
+        - name: init
+          configMap:
+            name: seafile-mariadb-init
+            defaultMode: 0755
 ---
 apiVersion: v1
 kind: Service

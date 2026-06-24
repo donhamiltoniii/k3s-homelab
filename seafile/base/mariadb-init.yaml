@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: seafile-mariadb-init
+data:
+  # A .sh file in docker-entrypoint-initdb.d runs with env vars available,
+  # so we can grant the seafile user (already created by MYSQL_USER/PASSWORD)
+  # rights to the additional Seafile databases it must create during setup.
+  # Runs ONCE, only on a fresh data dir.
+  10-seafile-grants.sh: |
+    #!/bin/bash
+    set -e
+    mariadb -uroot -p"${MYSQL_ROOT_PASSWORD}" <<-SQL
+      GRANT ALL PRIVILEGES ON ccnet_db.*   TO '${MYSQL_USER}'@'%';
+      GRANT ALL PRIVILEGES ON seafile_db.* TO '${MYSQL_USER}'@'%';
+      GRANT ALL PRIVILEGES ON seahub_db.*  TO '${MYSQL_USER}'@'%';
+      GRANT CREATE ON *.* TO '${MYSQL_USER}'@'%';
+      FLUSH PRIVILEGES;
+    SQL

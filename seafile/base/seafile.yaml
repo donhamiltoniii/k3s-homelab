@@ -16,9 +16,14 @@ spec:
       labels:
         app: seafile
     spec:
+      # Pin to the SAME node as MariaDB (local-path PVCs are node-bound). Fill in:
+      # nodeSelector:
+      #   kubernetes.io/hostname: <node-name>
       containers:
         - name: seafile
-          image: seafileltd/seafile-mc:12.0-latest
+          # Pinned to a specific patch version (not a floating *-latest tag) so a
+          # pod reschedule can't silently pull a different build.
+          image: seafileltd/seafile-mc:12.0.14
           env:
             - name: DB_HOST
               value: seafile-mariadb
@@ -29,21 +34,18 @@ spec:
                 secretKeyRef:
                   name: seafile-secrets
                   key: MYSQL_ROOT_PASSWORD
+            - name: SEAFILE_MYSQL_DB_USER
+              value: seafile
             - name: SEAFILE_MYSQL_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: seafile-secrets
                   key: SEAFILE_MYSQL_DB_PASSWORD
-            - name: SEAFILE_ADMIN_EMAIL
+            - name: JWT_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
                   name: seafile-secrets
-                  key: SEAFILE_ADMIN_EMAIL
-            - name: SEAFILE_ADMIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: seafile-secrets
-                  key: SEAFILE_ADMIN_PASSWORD
+                  key: JWT_PRIVATE_KEY
             - name: SEAFILE_SERVER_HOSTNAME
               value: seafile.k3s.syntaxandsymbols.com
             - name: SEAFILE_SERVER_PROTOCOL
@@ -66,16 +68,13 @@ spec:
               value: seafile-redis
             - name: REDIS_PORT
               value: "6379"
-            - name: JWT_PRIVATE_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: seafile-secrets
-                  key: JWT_PRIVATE_KEY
           ports:
             - containerPort: 80
           volumeMounts:
             - name: data
               mountPath: /shared
+          # Probe a lightweight endpoint that returns 200 (NOT "/", which 302s to
+          # the login page and times out -> the original 0/1 readiness hang).
           readinessProbe:
             httpGet:
               path: /api2/ping/
