@@ -21,26 +21,36 @@ spec:
       #   kubernetes.io/hostname: <node-name>
       containers:
         - name: seafile
-          # Pinned to a specific patch version (not a floating *-latest tag) so a
-          # pod reschedule can't silently pull a different build.
           image: seafileltd/seafile-mc:12.0.14
           env:
-            - name: DB_HOST
+            # --- DB connection: env var names MUST match what setup-seafile-mysql.py
+            #     reads (MYSQL_*, not DB_* / SEAFILE_MYSQL_DB_*). This was the bug. ---
+            - name: MYSQL_HOST
               value: seafile-mariadb
-            - name: DB_PORT
+            - name: MYSQL_PORT
               value: "3306"
-            - name: DB_ROOT_PASSWD
-              valueFrom:
-                secretKeyRef:
-                  name: seafile-secrets
-                  key: MYSQL_ROOT_PASSWORD
-            - name: SEAFILE_MYSQL_DB_USER
+            - name: MYSQL_USER
               value: seafile
-            - name: SEAFILE_MYSQL_DB_PASSWORD
+            - name: MYSQL_USER_PASSWD
               valueFrom:
                 secretKeyRef:
                   name: seafile-secrets
                   key: SEAFILE_MYSQL_DB_PASSWORD
+            - name: MYSQL_USER_HOST
+              value: "%"
+            - name: MYSQL_ROOT_PASSWD
+              valueFrom:
+                secretKeyRef:
+                  name: seafile-secrets
+                  key: MYSQL_ROOT_PASSWORD
+            # database names the setup script expects
+            - name: CCNET_DB
+              value: ccnet_db
+            - name: SEAFILE_DB
+              value: seafile_db
+            - name: SEAHUB_DB
+              value: seahub_db
+            # --- App config ---
             - name: JWT_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
@@ -70,9 +80,6 @@ spec:
               value: "6379"
           ports:
             - containerPort: 80
-          volumeMounts:
-            - name: data
-              mountPath: /shared
           # Probe a lightweight endpoint that returns 200 (NOT "/", which 302s to
           # the login page and times out -> the original 0/1 readiness hang).
           readinessProbe:
@@ -83,6 +90,9 @@ spec:
             periodSeconds: 15
             timeoutSeconds: 10
             failureThreshold: 12
+          volumeMounts:
+            - name: data
+              mountPath: /shared
           resources:
             requests:
               cpu: 250m
