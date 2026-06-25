@@ -40,13 +40,13 @@ spec:
                   name: n8n-postgres-secret
                   key: POSTGRES_PASSWORD
             - name: N8N_HOST
-              value: n8n.syntaxandsymbols.com
+              value: n8n.k3s.syntaxandsymbols.com
             - name: N8N_PORT
               value: "5678"
             - name: N8N_PROTOCOL
               value: https
             - name: WEBHOOK_URL
-              value: https://n8n.syntaxandsymbols.com/
+              value: https://n8n.k3s.syntaxandsymbols.com/
             - name: N8N_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:

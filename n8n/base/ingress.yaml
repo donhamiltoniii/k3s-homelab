@@ -5,7 +5,7 @@ metadata:
   namespace: n8n
 spec:
   rules:
-    - host: n8n.syntaxandsymbols.com
+    - host: n8n.k3s.syntaxandsymbols.com
       http:
         paths:
           - path: /
