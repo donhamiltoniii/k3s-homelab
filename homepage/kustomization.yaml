@@ -21,6 +21,7 @@ configMapGenerator:
       - config/services.yaml
       - config/bookmarks.yaml
       - config/docker.yaml
+      - config/proxmox.yaml
 
 # Hash suffix on the generated ConfigMap rolls the Deployment automatically
 # whenever any config file changes. Keep this true (the default).
