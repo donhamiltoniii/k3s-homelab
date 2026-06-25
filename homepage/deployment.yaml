@@ -44,7 +44,7 @@ spec:
               protocol: TCP
           env:
             - name: HOMEPAGE_ALLOWED_HOSTS
-              value: homepage.k3s.syntaxandsymbols.com
+              value: homepage.k3s.syntaxandsymbols.com,localhost:3000
             - name: HOMEPAGE_VAR_IMMICH_KEY
               valueFrom:
                 secretKeyRef:
@@ -65,13 +65,21 @@ spec:
             httpGet:
               path: /api/healthcheck
               port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost:3000
             initialDelaySeconds: 15
+            timeoutSeconds: 5
             periodSeconds: 30
           readinessProbe:
             httpGet:
               path: /api/healthcheck
               port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost:3000
             initialDelaySeconds: 15
+            timeoutSeconds: 5
             periodSeconds: 30
           volumeMounts:
             - name: config
