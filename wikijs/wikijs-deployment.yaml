@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wikijs
+  namespace: wikijs
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: wikijs }
+  template:
+    metadata:
+      labels: { app: wikijs }
+    spec:
+      containers:
+        - name: wikijs
+          image: ghcr.io/requarks/wiki:2 # v2 stable
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DB_TYPE
+              value: postgres
+            - name: DB_HOST
+              value: wikijs-postgres
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: wiki
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef: { name: wikijs-secrets, key: POSTGRES_USER }
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef: { name: wikijs-secrets, key: POSTGRES_PASSWORD }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 3000 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 768Mi }

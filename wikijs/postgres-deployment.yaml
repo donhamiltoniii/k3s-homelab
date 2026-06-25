@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wikijs-postgres
+  namespace: wikijs
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # RWO PVC, never two pods mounting at once
+  selector:
+    matchLabels: { app: wikijs-postgres }
+  template:
+    metadata:
+      labels: { app: wikijs-postgres }
+    spec:
+      # Uncomment to pin off optiflex-7000 (disk pressure):
+      # affinity:
+      #   nodeAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       nodeSelectorTerms:
+      #         - matchExpressions:
+      #             - key: kubernetes.io/hostname
+      #               operator: NotIn
+      #               values: [optiflex-7000]
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: wiki
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: { name: wikijs-secrets, key: POSTGRES_USER }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: wikijs-secrets, key: POSTGRES_PASSWORD }
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: [sh, -c, "pg_isready -U $POSTGRES_USER -d wiki"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 512Mi }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: wikijs-postgres-data
