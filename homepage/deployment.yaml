@@ -33,7 +33,7 @@ spec:
             # reach the app. Set to your tunnel hostname (and the in-cluster
             # service if you ever curl it directly).
             - name: HOMEPAGE_ALLOWED_HOSTS
-              value: home.syntaxandsymbols.com
+              value: homepage.k3s.syntaxandsymbols.com
             - name: HOMEPAGE_VAR_IMMICH_KEY
               valueFrom:
                 secretKeyRef:
@@ -44,8 +44,6 @@ spec:
                 secretKeyRef:
                   name: homepage-secrets
                   key: HASS_TOKEN
-            - name: HOMEPAGE_ALLOWED_HOSTS
-              value: "*"
           resources:
             requests:
               cpu: 50m
