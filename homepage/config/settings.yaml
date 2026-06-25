@@ -1,0 +1,15 @@
+title: syntaxandsymbols
+favicon: https://syntaxandsymbols.com/favicon.ico
+theme: dark
+color: slate
+headerStyle: clean
+layout:
+  Infrastructure:
+    style: row
+    columns: 3
+  Media & Files:
+    style: row
+    columns: 3
+  Home:
+    style: row
+    columns: 3
