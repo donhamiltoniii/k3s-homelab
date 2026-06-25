@@ -45,7 +45,7 @@ spec:
                   name: homepage-secrets
                   key: HASS_TOKEN
             - name: HOMEPAGE_ALLOWED_HOSTS
-              value: homepage.k3s.syntaxandsymbols.com,homepage.homepage.svc.cluster.local:3000,10.42.0.0/16,localhost:3000
+              value: "*"
           resources:
             requests:
               cpu: 50m
