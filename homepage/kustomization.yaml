@@ -10,6 +10,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - sealedsecret-homepage.yaml
 
 configMapGenerator:
   - name: homepage-config
