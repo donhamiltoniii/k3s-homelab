@@ -27,14 +27,10 @@
           url: http://ollama.ollama.svc.cluster.local:11434/api/tags
           method: GET
           mappings:
-            - field:
-                models:
-                  0: name
+            - field: models.0.name
               label: Model
               format: text
-            - field:
-                models:
-                  0: size
+            - field: models.0.size
               label: Size
               format: bytes
 
