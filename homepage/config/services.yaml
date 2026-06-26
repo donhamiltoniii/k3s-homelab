@@ -1,6 +1,6 @@
 - Infrastructure:
     - ArgoCD:
-        icon: argocd.png
+        icon: argo-cd.png
         href: https://argocd.example.com
         description: GitOps continuous delivery
         namespace: argocd
