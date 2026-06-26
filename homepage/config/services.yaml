@@ -22,6 +22,9 @@
         description: Local LLM inference (Qwen3)
         namespace: ollama
         app: ollama
+        widget:
+          type: ollama
+          url: http://ollama.ollama.svc.cluster.local:11434
 
 - Media & Files:
     - Immich:
