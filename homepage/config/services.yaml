@@ -6,15 +6,12 @@
         namespace: argocd
         app: argocd-server
     - Uptime Kuma:
-        icon: uptime-kuma.png
         href: https://uptime.k3s.syntaxandsymbols.com
-        description: Service monitoring
-        namespace: uptime-kuma
-        app: uptime-kuma
+        icon: uptime-kuma.png
         widget:
           type: uptimekuma
-          url: http://uptime.uptime.svc.cluster.local:3001
-          slug: default
+          url: http://uptime.uptime.svc.cluster.local
+          slug: homelab
     - Ollama:
         icon: ollama.png
         href: http://192.168.0.52:11434
