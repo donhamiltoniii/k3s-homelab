@@ -28,12 +28,15 @@
           method: GET
           mappings:
             - field:
-                models: 0
-                name: name
-              label: Loaded
-            - field: models
-              label: Installed
+                models:
+                  0: name
+              label: Model
               format: text
+            - field:
+                models:
+                  0: size
+              label: Size
+              format: bytes
 
 - Media & Files:
     - Immich:
