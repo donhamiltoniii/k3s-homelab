@@ -7,13 +7,13 @@
         app: argocd-server
     - Uptime Kuma:
         icon: uptime-kuma.png
-        href: https://uptime.syntaxandsymbols.com
+        href: https://uptime.k3s.syntaxandsymbols.com
         description: Service monitoring
         namespace: uptime-kuma
         app: uptime-kuma
         widget:
           type: uptimekuma
-          url: http://uptime-kuma.uptime-kuma.svc.cluster.local:3001
+          url: http://uptime.uptime.svc.cluster.local:3001
           slug: default
     - Ollama:
         icon: ollama.png
@@ -25,7 +25,7 @@
 - Media & Files:
     - Immich:
         icon: immich.png
-        href: https://immich.syntaxandsymbols.com
+        href: https://immich.k3s.syntaxandsymbols.com
         description: Photo & video management
         namespace: immich
         app: immich-server
@@ -44,10 +44,10 @@
 - Home:
     - Home Assistant:
         icon: home-assistant.png
-        href: https://hass.syntaxandsymbols.com
+        href: https://homeassitant.k3s.syntaxandsymbols.com
         description: Home automation
-        namespace: home-assistant
-        app: home-assistant
+        namespace: homeassistant
+        app: homeassistant
         widget:
           type: homeassistant
           url: http://home-assistant.home-assistant.svc.cluster.local:8123
