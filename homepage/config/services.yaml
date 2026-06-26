@@ -23,8 +23,17 @@
         namespace: ollama
         app: ollama
         widget:
-          type: ollama
-          url: http://ollama.ollama.svc.cluster.local:11434
+          type: customapi
+          url: http://ollama.ollama.svc.cluster.local:11434/api/tags
+          method: GET
+          mappings:
+            - field:
+                models: 0
+                name: name
+              label: Loaded
+            - field: models
+              label: Installed
+              format: text
 
 - Media & Files:
     - Immich:
