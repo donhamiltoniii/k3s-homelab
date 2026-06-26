@@ -1,10 +1,14 @@
 - Infrastructure:
     - ArgoCD:
         icon: argocd.png
-        href: https://argocd.syntaxandsymbols.com
+        href: https://argocd.example.com
         description: GitOps continuous delivery
         namespace: argocd
         app: argocd-server
+        widget:
+          type: argocd
+          url: https://argocd-server.argocd.svc.cluster.local
+          key: "{{HOMEPAGE_VAR_ARGOCD_TOKEN}}"
     - Uptime Kuma:
         href: https://uptime.k3s.syntaxandsymbols.com
         icon: uptime-kuma.png
@@ -28,7 +32,7 @@
         app: immich-server
         widget:
           type: immich
-          url: http://immich-server.immich.svc.cluster.local:2283
+          url: http://immich-server.immich.svc.cluster.local
           key: "{{HOMEPAGE_VAR_IMMICH_KEY}}"
           version: 2
     - Vaultwarden:
@@ -41,7 +45,7 @@
 - Home:
     - Home Assistant:
         icon: home-assistant.png
-        href: https://homeassitant.k3s.syntaxandsymbols.com
+        href: https://homeassistant.k3s.syntaxandsymbols.com
         description: Home automation
         namespace: homeassistant
         app: homeassistant
