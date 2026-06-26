@@ -1,10 +1,8 @@
 - Infrastructure:
     - ArgoCD:
-        icon: argo-cd.png
+        icon: argocd
         href: https://argocd.example.com
         description: GitOps continuous delivery
-        namespace: argocd
-        app: argocd-server
         widget:
           type: argocd
           url: http://argocd-server.argocd.svc.cluster.local
@@ -20,27 +18,12 @@
         icon: ollama.png
         href: http://192.168.0.52:11434
         description: Local LLM inference (Qwen3)
-        namespace: ollama
-        app: ollama
-        widget:
-          type: customapi
-          url: http://ollama.ollama.svc.cluster.local:11434/api/tags
-          method: GET
-          mappings:
-            - field: models.0.name
-              label: Model
-              format: text
-            - field: models.0.size
-              label: Size
-              format: bytes
 
 - Media & Files:
     - Immich:
         icon: immich.png
         href: https://immich.k3s.syntaxandsymbols.com
         description: Photo & video management
-        namespace: immich
-        app: immich-server
         widget:
           type: immich
           url: http://immich-server.immich.svc.cluster.local
@@ -50,17 +33,13 @@
         icon: vaultwarden.png
         href: https://vault.syntaxandsymbols.com
         description: Password manager
-        namespace: vaultwarden
-        app: vaultwarden
 
 - Home:
     - Home Assistant:
         icon: home-assistant.png
         href: https://homeassistant.k3s.syntaxandsymbols.com
         description: Home automation
-        namespace: homeassistant
-        app: homeassistant
         widget:
           type: homeassistant
-          url: http://home-assistant.home-assistant.svc.cluster.local:8123
+          url: http://home-assistant.homeassistant.svc.cluster.local
           key: "{{HOMEPAGE_VAR_HASS_TOKEN}}"
