@@ -14,10 +14,14 @@
           type: uptimekuma
           url: http://uptime.uptime.svc.cluster.local
           slug: homelab
-    - Ollama:
-        icon: ollama.png
-        href: http://192.168.0.52:11434
-        description: Local LLM inference (Qwen3)
+    - Gitea:
+        icon: gitea.png
+        href: https://gitea.k3s.syntaxandsymbols.com
+        description: Self-hosted Git
+        widget:
+          type: gitea
+          url: http://gitea-service.gitea.svc.cluster.local:3000
+          key: "{{HOMEPAGE_VAR_GITEA_TOKEN}}"
 
 - Media & Files:
     - Immich:
@@ -33,6 +37,28 @@
         icon: vaultwarden.png
         href: https://vault.syntaxandsymbols.com
         description: Password manager
+    - Seafile:
+        icon: seafile.png
+        href: https://seafile.k3s.syntaxandsymbols.com
+        description: File sync & storage
+
+- Dev & Automation:
+    - n8n:
+        icon: n8n.png
+        href: https://n8n.syntaxandsymbols.com
+        description: Workflow automation
+    - Wiki.js:
+        icon: wikijs.png
+        href: https://wiki.syntaxandsymbols.com
+        description: Knowledge base
+    - Ollama:
+        icon: ollama.png
+        href: http://192.168.0.52:11434
+        description: Local LLM inference (Qwen3)
+    - Open WebUI:
+        icon: open-webui.png
+        href: https://openwebui.k3s.syntaxandsymbols.com
+        description: Chat interface for Ollama
 
 - Home:
     - Home Assistant:
