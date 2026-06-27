@@ -60,6 +60,11 @@ spec:
                 secretKeyRef:
                   name: homepage-argocd
                   key: HOMEPAGE_VAR_ARGOCD_TOKEN
+            - name: HOMEPAGE_VAR_GITEA_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: homepage-secrets
+                  key: HOMEPAGE_VAR_GITEA_TOKEN
           resources:
             requests:
               cpu: 50m
