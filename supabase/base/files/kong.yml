@@ -8,6 +8,13 @@ consumers:
   - username: service_role
     keyauth_credentials:
       - key: ${SERVICE_ROLE_KEY}
+  # Dashboard basic-auth consumer — this was MISSING, which is why the
+  # basic-auth plugin on the Studio route rejected every login (no registered
+  # credentials to match against). Rendered by the initContainer from the secret.
+  - username: ${DASHBOARD_USERNAME}
+    basicauth_credentials:
+      - username: ${DASHBOARD_USERNAME}
+        password: ${DASHBOARD_PASSWORD}
 
 acls:
   - consumer: anon

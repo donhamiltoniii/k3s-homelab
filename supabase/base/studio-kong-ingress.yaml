@@ -30,7 +30,7 @@ spec:
             - name: SUPABASE_URL
               value: http://kong:8000          # internal
             - name: SUPABASE_PUBLIC_URL
-              value: http://supabase.lan        # what the browser hits
+              value: http://supabase.k3s.syntaxandsymbols.com   # LAN-only, resolved by Unbound
             - name: SUPABASE_ANON_KEY
               valueFrom: { secretKeyRef: { name: supabase-secrets, key: ANON_KEY } }
             - name: SUPABASE_SERVICE_KEY
@@ -99,12 +99,18 @@ spec:
             - |
               sed -e "s|\${ANON_KEY}|$ANON_KEY|g" \
                   -e "s|\${SERVICE_ROLE_KEY}|$SERVICE_ROLE_KEY|g" \
+                  -e "s|\${DASHBOARD_USERNAME}|$DASHBOARD_USERNAME|g" \
+                  -e "s|\${DASHBOARD_PASSWORD}|$DASHBOARD_PASSWORD|g" \
                   /tmpl/kong.yml > /home/kong/kong.yml
           env:
             - name: ANON_KEY
               valueFrom: { secretKeyRef: { name: supabase-secrets, key: ANON_KEY } }
             - name: SERVICE_ROLE_KEY
               valueFrom: { secretKeyRef: { name: supabase-secrets, key: SERVICE_ROLE_KEY } }
+            - name: DASHBOARD_USERNAME
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: DASHBOARD_USERNAME } }
+            - name: DASHBOARD_PASSWORD
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: DASHBOARD_PASSWORD } }
           volumeMounts:
             - { name: kong-tmpl, mountPath: /tmpl }
             - { name: kong-config, mountPath: /home/kong }
@@ -122,8 +128,9 @@ spec:
   ports:
     - { name: proxy, port: 8000, targetPort: 8000 }
 ---
-# Traefik IngressRoute — LAN only. Point supabase.lan at your Traefik LB IP
-# in OPNsense Unbound (host override) or dnsmasq.
+# Traefik IngressRoute — LAN only. Add an Unbound host override on OPNsense
+# (192.168.0.1) pointing supabase.k3s.syntaxandsymbols.com at your Traefik LB
+# IP. The hostname resolves only inside your network; nothing is exposed.
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -132,7 +139,7 @@ metadata:
 spec:
   entryPoints: [web]
   routes:
-    - match: Host(`supabase.lan`)
+    - match: Host(`supabase.k3s.syntaxandsymbols.com`)
       kind: Rule
       services:
         - name: kong
