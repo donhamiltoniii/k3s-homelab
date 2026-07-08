@@ -1,0 +1,139 @@
+# =============================================================================
+#  Studio (dashboard) + Kong (API gateway) + Traefik IngressRoute (LAN)
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: studio
+  namespace: supabase
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: studio } }
+  template:
+    metadata: { labels: { app: studio } }
+    spec:
+      containers:
+        - name: studio
+          image: supabase/studio:2026.06.03-sha-0bca601
+          ports: [{ containerPort: 3000 }]
+          env:
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            - name: STUDIO_PG_META_URL
+              value: http://meta:8080
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: POSTGRES_PASSWORD } }
+            - name: DEFAULT_ORGANIZATION_NAME
+              value: "syntaxandsymbols"
+            - name: DEFAULT_PROJECT_NAME
+              value: "homelab"
+            - name: SUPABASE_URL
+              value: http://kong:8000          # internal
+            - name: SUPABASE_PUBLIC_URL
+              value: http://supabase.lan        # what the browser hits
+            - name: SUPABASE_ANON_KEY
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: ANON_KEY } }
+            - name: SUPABASE_SERVICE_KEY
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: SERVICE_ROLE_KEY } }
+            - name: AUTH_JWT_SECRET
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: JWT_SECRET } }
+            - name: PG_META_CRYPTO_KEY
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: PG_META_CRYPTO_KEY } }
+            # July 2026: Studio connects as `postgres`, not supabase_admin
+            - name: POSTGRES_USER_READ_WRITE
+              value: postgres
+            - name: POSTGRES_HOST
+              value: db
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: postgres
+---
+apiVersion: v1
+kind: Service
+metadata: { name: studio, namespace: supabase }
+spec:
+  selector: { app: studio }
+  ports: [{ port: 3000, targetPort: 3000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: supabase
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: kong } }
+  template:
+    metadata: { labels: { app: kong } }
+    spec:
+      containers:
+        - name: kong
+          image: kong:2.8.1
+          ports:
+            - { containerPort: 8000, name: proxy }
+            - { containerPort: 8443, name: proxy-ssl }
+          env:
+            - name: KONG_DATABASE
+              value: "off"
+            - name: KONG_DECLARATIVE_CONFIG
+              value: /home/kong/kong.yml
+            - name: KONG_DNS_ORDER
+              value: LAST,A,CNAME
+            - name: KONG_PLUGINS
+              value: "request-transformer,cors,key-auth,acl,basic-auth"
+            - name: KONG_NGINX_PROXY_PROXY_BUFFER_SIZE
+              value: 160k
+            - name: KONG_NGINX_PROXY_PROXY_BUFFERS
+              value: 64 160k
+            # Kong 2.8 does not template env vars into declarative config by
+            # default; we render the file at startup with an initContainer.
+          volumeMounts:
+            - name: kong-config
+              mountPath: /home/kong
+      initContainers:
+        - name: render-kong
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              sed -e "s|\${ANON_KEY}|$ANON_KEY|g" \
+                  -e "s|\${SERVICE_ROLE_KEY}|$SERVICE_ROLE_KEY|g" \
+                  /tmpl/kong.yml > /home/kong/kong.yml
+          env:
+            - name: ANON_KEY
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: ANON_KEY } }
+            - name: SERVICE_ROLE_KEY
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: SERVICE_ROLE_KEY } }
+          volumeMounts:
+            - { name: kong-tmpl, mountPath: /tmpl }
+            - { name: kong-config, mountPath: /home/kong }
+      volumes:
+        - name: kong-tmpl
+          configMap: { name: supabase-kong }
+        - name: kong-config
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata: { name: kong, namespace: supabase }
+spec:
+  selector: { app: kong }
+  ports:
+    - { name: proxy, port: 8000, targetPort: 8000 }
+---
+# Traefik IngressRoute — LAN only. Point supabase.lan at your Traefik LB IP
+# in OPNsense Unbound (host override) or dnsmasq.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: supabase
+  namespace: supabase
+spec:
+  entryPoints: [web]
+  routes:
+    - match: Host(`supabase.lan`)
+      kind: Rule
+      services:
+        - name: kong
+          port: 8000

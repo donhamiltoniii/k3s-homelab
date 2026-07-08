@@ -1,0 +1,198 @@
+# =============================================================================
+#  Realtime + Storage + imgproxy + postgres-meta
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: realtime
+  namespace: supabase
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: realtime } }
+  template:
+    metadata: { labels: { app: realtime } }
+    spec:
+      containers:
+        - name: realtime
+          image: supabase/realtime:v2.34.47
+          ports: [{ containerPort: 4000 }]
+          env:
+            - name: PORT
+              value: "4000"
+            - name: DB_HOST
+              value: db
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              value: supabase_admin
+            - name: DB_NAME
+              value: postgres
+            - name: DB_AFTER_CONNECT_QUERY
+              value: "SET search_path TO _realtime"
+            - name: DB_ENC_KEY
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: VAULT_ENC_KEY } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: POSTGRES_PASSWORD } }
+            - name: SECRET_KEY_BASE
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: SECRET_KEY_BASE } }
+            - name: API_JWT_SECRET
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: JWT_SECRET } }
+            - name: ERL_AFLAGS
+              value: "-proto_dist inet_tcp"
+            - name: RLIMIT_NOFILE
+              value: "10000"
+            - name: APP_NAME
+              value: realtime
+            - name: SEED_SELF_HOST
+              value: "true"
+            - name: RUN_JANITOR
+              value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata: { name: realtime, namespace: supabase }
+spec:
+  selector: { app: realtime }
+  ports: [{ port: 4000, targetPort: 4000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage
+  namespace: supabase
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: storage } }
+  template:
+    metadata: { labels: { app: storage } }
+    spec:
+      containers:
+        - name: storage
+          image: supabase/storage-api:v1.19.3
+          ports: [{ containerPort: 5000 }]
+          env:
+            - name: SERVER_PORT
+              value: "5000"
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: POSTGRES_PASSWORD } }
+            - name: DATABASE_URL
+              value: "postgres://supabase_storage_admin:$(POSTGRES_PASSWORD)@db:5432/postgres"
+            - name: ANON_KEY
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: ANON_KEY } }
+            - name: SERVICE_KEY
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: SERVICE_ROLE_KEY } }
+            - name: PGRST_JWT_SECRET
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: JWT_SECRET } }
+            - name: FILE_SIZE_LIMIT
+              value: "52428800"
+            - name: STORAGE_BACKEND
+              value: file
+            - name: FILE_STORAGE_BACKEND_PATH
+              value: /var/lib/storage
+            - name: TENANT_ID
+              value: stub
+            - name: REGION
+              value: stub
+            - name: GLOBAL_S3_BUCKET
+              value: stub
+            - name: ENABLE_IMAGE_TRANSFORMATION
+              value: "true"
+            - name: IMGPROXY_URL
+              value: http://imgproxy:5001
+          volumeMounts:
+            - name: storage-data
+              mountPath: /var/lib/storage
+      volumes:
+        - name: storage-data
+          persistentVolumeClaim:
+            claimName: storage-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: storage-pvc, namespace: supabase }
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources: { requests: { storage: 5Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: storage, namespace: supabase }
+spec:
+  selector: { app: storage }
+  ports: [{ port: 5000, targetPort: 5000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: imgproxy
+  namespace: supabase
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: imgproxy } }
+  template:
+    metadata: { labels: { app: imgproxy } }
+    spec:
+      containers:
+        - name: imgproxy
+          image: darthsim/imgproxy:v3.8.0
+          ports: [{ containerPort: 5001 }]
+          env:
+            - name: IMGPROXY_BIND
+              value: ":5001"
+            - name: IMGPROXY_LOCAL_FILESYSTEM_ROOT
+              value: /
+            - name: IMGPROXY_USE_ETAG
+              value: "true"
+            - name: IMGPROXY_ENABLE_WEBP_DETECTION
+              value: "true"
+          volumeMounts:
+            - name: storage-data
+              mountPath: /var/lib/storage
+      volumes:
+        - name: storage-data
+          persistentVolumeClaim:
+            claimName: storage-pvc
+---
+apiVersion: v1
+kind: Service
+metadata: { name: imgproxy, namespace: supabase }
+spec:
+  selector: { app: imgproxy }
+  ports: [{ port: 5001, targetPort: 5001 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meta
+  namespace: supabase
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: meta } }
+  template:
+    metadata: { labels: { app: meta } }
+    spec:
+      containers:
+        - name: meta
+          image: supabase/postgres-meta:v0.91.0
+          ports: [{ containerPort: 8080 }]
+          env:
+            - name: PG_META_PORT
+              value: "8080"
+            - name: PG_META_DB_HOST
+              value: db
+            - name: PG_META_DB_PORT
+              value: "5432"
+            - name: PG_META_DB_NAME
+              value: postgres
+            - name: PG_META_DB_USER
+              value: supabase_admin
+            - name: PG_META_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: POSTGRES_PASSWORD } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: meta, namespace: supabase }
+spec:
+  selector: { app: meta }
+  ports: [{ port: 8080, targetPort: 8080 }]

@@ -1,0 +1,94 @@
+# =============================================================================
+#  Postgres (supabase/postgres 17) — the bundled DB, owns its own roles/exts.
+#  StatefulSet + headless Service + PVC on local-path (any node).
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: supabase
+  labels: { app: supabase-db }
+spec:
+  clusterIP: None
+  selector: { app: supabase-db }
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: supabase-db
+  namespace: supabase
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels: { app: supabase-db }
+  template:
+    metadata:
+      labels: { app: supabase-db }
+    spec:
+      # local-path provisions on whichever node the pod first schedules to.
+      # StatefulSet keeps it pinned there afterward via the PVC.
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: postgres
+          image: supabase/postgres:17.6.1.136
+          args:
+            - postgres
+            - -c
+            - config_file=/etc/postgresql/postgresql.conf
+            - -c
+            - log_min_messages=fatal          # silence Realtime WAL noise (per changelog)
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_HOST
+              value: /var/run/postgresql
+            - name: POSTGRES_DB
+              value: postgres
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: supabase-secrets, key: POSTGRES_PASSWORD }
+            # supabase/postgres runs any *.sql in this dir on an empty data dir.
+            # We inject the password into the role SQL via a psql var.
+            - name: PGOPTIONS
+              value: "-c search_path=public"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+              subPath: pgdata
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d/99-supabase-roles.sql
+              subPath: 99-supabase-roles.sql
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-h", "localhost"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-h", "localhost"]
+            initialDelaySeconds: 45
+            periodSeconds: 20
+          resources:
+            requests: { cpu: "250m", memory: "512Mi" }
+            limits: { memory: "2Gi" }
+      volumes:
+        - name: init
+          configMap:
+            name: supabase-db-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 10Gi

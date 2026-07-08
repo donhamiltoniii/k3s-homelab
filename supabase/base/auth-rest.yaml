@@ -1,0 +1,99 @@
+# =============================================================================
+#  Auth (GoTrue) + REST (PostgREST)
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+  namespace: supabase
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: auth } }
+  template:
+    metadata: { labels: { app: auth } }
+    spec:
+      containers:
+        - name: gotrue
+          image: supabase/gotrue:v2.179.0
+          ports: [{ containerPort: 9999 }]
+          env:
+            - name: GOTRUE_API_HOST
+              value: "0.0.0.0"
+            - name: GOTRUE_API_PORT
+              value: "9999"
+            # NOTE: /auth/v1 prefix per the July 2026 breaking change.
+            - name: API_EXTERNAL_URL
+              value: "http://supabase.lan/auth/v1"
+            - name: GOTRUE_SITE_URL
+              value: "http://supabase.lan"
+            - name: GOTRUE_DB_DRIVER
+              value: postgres
+            - name: GOTRUE_JWT_SECRET
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: JWT_SECRET } }
+            - name: GOTRUE_JWT_EXP
+              value: "3600"
+            - name: GOTRUE_JWT_DEFAULT_GROUP_NAME
+              value: authenticated
+            - name: GOTRUE_JWT_ADMIN_ROLES
+              value: service_role
+            - name: GOTRUE_JWT_AUD
+              value: authenticated
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: POSTGRES_PASSWORD } }
+            - name: GOTRUE_DB_DATABASE_URL
+              value: "postgres://supabase_auth_admin:$(POSTGRES_PASSWORD)@db:5432/postgres?search_path=auth"
+            - name: GOTRUE_DISABLE_SIGNUP
+              value: "false"
+            - name: GOTRUE_MAILER_AUTOCONFIRM
+              value: "true"          # no SMTP configured; auto-confirm for homelab
+            - name: GOTRUE_EXTERNAL_EMAIL_ENABLED
+              value: "true"
+          readinessProbe:
+            httpGet: { path: /health, port: 9999 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata: { name: auth, namespace: supabase }
+spec:
+  selector: { app: auth }
+  ports: [{ port: 9999, targetPort: 9999 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rest
+  namespace: supabase
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: rest } }
+  template:
+    metadata: { labels: { app: rest } }
+    spec:
+      containers:
+        - name: postgrest
+          image: postgrest/postgrest:v12.2.12
+          ports: [{ containerPort: 3000 }]
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: POSTGRES_PASSWORD } }
+            - name: PGRST_DB_URI
+              value: "postgres://authenticator:$(POSTGRES_PASSWORD)@db:5432/postgres"
+            - name: PGRST_DB_SCHEMAS
+              value: "public,storage,graphql_public"
+            - name: PGRST_DB_ANON_ROLE
+              value: anon
+            - name: PGRST_JWT_SECRET
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: JWT_SECRET } }
+            - name: PGRST_DB_USE_LEGACY_GUCS
+              value: "false"
+            - name: PGRST_APP_SETTINGS_JWT_SECRET
+              valueFrom: { secretKeyRef: { name: supabase-secrets, key: JWT_SECRET } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: rest, namespace: supabase }
+spec:
+  selector: { app: rest }
+  ports: [{ port: 3000, targetPort: 3000 }]

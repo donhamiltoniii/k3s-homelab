@@ -1,0 +1,53 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: supabase
+
+resources:
+  - namespace.yaml
+  - db.yaml
+  - auth-rest.yaml
+  - realtime-storage-meta.yaml
+  - studio-kong-ingress.yaml
+  # SealedSecret lives in the overlay (see overlays/homelab). If you prefer it
+  # in base, add sealed-secret.yaml here instead.
+
+# --- Generated ConfigMaps -----------------------------------------------------
+# Kustomize appends a content hash to each name and rewrites every reference,
+# so editing the SQL or kong.yml rolls the dependent pods automatically.
+configMapGenerator:
+  - name: supabase-db-init
+    files:
+      - files/99-supabase-roles.sql
+  - name: supabase-kong
+    files:
+      - kong.yml=files/kong.yml
+
+# --- Image tags in one place --------------------------------------------------
+# Bump here; no need to hunt through Deployment specs. Tags verified current
+# as of the July 2026 self-hosted release (Postgres 17 default).
+images:
+  - name: supabase/postgres
+    newTag: 17.6.1.136
+  - name: supabase/gotrue
+    newTag: v2.179.0
+  - name: postgrest/postgrest
+    newTag: v12.2.12
+  - name: supabase/realtime
+    newTag: v2.34.47
+  - name: supabase/storage-api
+    newTag: v1.19.3
+  - name: darthsim/imgproxy
+    newTag: v3.8.0
+  - name: supabase/postgres-meta
+    newTag: v0.91.0
+  - name: supabase/studio
+    newTag: 2026.06.03-sha-0bca601
+  - name: kong
+    newTag: 2.8.1
+
+# --- Common labels ------------------------------------------------------------
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: supabase
