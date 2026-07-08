@@ -30,7 +30,7 @@ spec:
             - name: SUPABASE_URL
               value: http://kong:8000          # internal
             - name: SUPABASE_PUBLIC_URL
-              value: http://supabase.k3s.syntaxandsymbols.com   # LAN-only, resolved by Unbound
+              value: http://supabase.lan   # LAN-only, resolved by Unbound
             - name: SUPABASE_ANON_KEY
               valueFrom: { secretKeyRef: { name: supabase-secrets, key: ANON_KEY } }
             - name: SUPABASE_SERVICE_KEY
@@ -129,7 +129,7 @@ spec:
     - { name: proxy, port: 8000, targetPort: 8000 }
 ---
 # Traefik IngressRoute — LAN only. Add an Unbound host override on OPNsense
-# (192.168.0.1) pointing supabase.k3s.syntaxandsymbols.com at your Traefik LB
+# (192.168.0.1) pointing supabase.lan at your Traefik LB
 # IP. The hostname resolves only inside your network; nothing is exposed.
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
