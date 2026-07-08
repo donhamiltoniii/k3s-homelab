@@ -18,7 +18,7 @@ resources:
 configMapGenerator:
   - name: supabase-db-init
     files:
-      - files/99-supabase-roles.sql
+      - files/99-supabase-roles.sh
   - name: supabase-kong
     files:
       - kong.yml=files/kong.yml

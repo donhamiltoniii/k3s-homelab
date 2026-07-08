@@ -64,8 +64,8 @@ spec:
               mountPath: /var/lib/postgresql/data
               subPath: pgdata
             - name: init
-              mountPath: /docker-entrypoint-initdb.d/99-supabase-roles.sql
-              subPath: 99-supabase-roles.sql
+              mountPath: /docker-entrypoint-initdb.d/99-supabase-roles.sh
+              subPath: 99-supabase-roles.sh
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres", "-h", "localhost"]
