@@ -139,7 +139,7 @@ metadata:
 spec:
   entryPoints: [web]
   routes:
-    - match: Host(`supabase.k3s.syntaxandsymbols.com`)
+    - match: Host(`supabase.lan`)
       kind: Rule
       services:
         - name: kong
