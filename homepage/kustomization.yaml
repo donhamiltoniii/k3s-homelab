@@ -7,12 +7,12 @@ resources:
   - namespace.yaml
   - serviceaccount.yaml
   - rbac.yaml
+  - config-map.yaml
   - deployment.yaml
   - service.yaml
   - ingress.yaml
   - sealedsecret-homepage.yaml
   - homepage-argocd-sealedsecret.yaml
-  - config-map.yaml
 
 configMapGenerator:
   - name: homepage-config
