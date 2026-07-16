@@ -12,6 +12,7 @@ resources:
   - ingress.yaml
   - sealedsecret-homepage.yaml
   - homepage-argocd-sealedsecret.yaml
+  - config-map.yaml
 
 configMapGenerator:
   - name: homepage-config
