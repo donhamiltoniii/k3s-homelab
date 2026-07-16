@@ -96,6 +96,9 @@ spec:
               mountPath: /app/config
             - name: logs
               mountPath: /app/config/logs
+            - name: favicon
+              mountPath: /app/public/favicon.png
+              subPath: favicon.png
       volumes:
         - name: config-src
           configMap:
@@ -104,3 +107,6 @@ spec:
           emptyDir: {}
         - name: logs
           emptyDir: {}
+        - name: favicon
+          configMap:
+            name: homepage-favicon
