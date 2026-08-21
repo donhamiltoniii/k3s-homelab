@@ -58,7 +58,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: tensorchord/pgvecto-rs:pg14-v0.2.0
+          image: tensorchord/pgvecto-rs:pg14-v0.3.0
           ports:
             - containerPort: 5432
           env:
