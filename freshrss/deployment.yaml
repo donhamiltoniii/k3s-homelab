@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: freshrss
+  labels:
+    app: freshrss
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: freshrss
+  template:
+    metadata:
+      labels:
+        app: freshrss
+    spec:
+      containers:
+        - name: freshrss
+          image: freshrss/freshrss:1.30.0
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            - name: TZ
+              value: America/New_York
+            - name: CRON_MIN
+              value: "3,33"
+            - name: TRUSTED_PROXY
+              value: "10.42.0.0/16"
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/FreshRSS/data
+            - name: extensions
+              mountPath: /var/www/FreshRSS/extensions
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: freshrss-data
+        - name: extensions
+          persistentVolumeClaim:
+            claimName: freshrss-extensions
