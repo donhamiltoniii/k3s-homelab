@@ -96,7 +96,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: ha.syntaxandsymbols.com
+    - host: ha.k3s.syntaxandsymbols.com
       http:
         paths:
           - path: /
