@@ -86,3 +86,93 @@ spec:
                 name: vaultwarden
                 port:
                   number: 80
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vaultwarden-backup
+  namespace: vaultwarden
+spec:
+  schedule: "0 3 * * *"
+  timeZone: America/New_York
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 1800
+      template:
+        spec:
+          restartPolicy: Never
+          initContainers:
+            - name: sqlite-dump
+              image: alpine:3.20
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  apk add --no-cache sqlite
+                  sqlite3 /data/db.sqlite3 ".backup '/dump/db.sqlite3'"
+                  sqlite3 /dump/db.sqlite3 "PRAGMA integrity_check;" | grep -qx ok
+              resources:
+                requests: { cpu: 25m, memory: 64Mi }
+                limits: { memory: 256Mi }
+              volumeMounts:
+                - { name: data, mountPath: /data }
+                - { name: dump, mountPath: /dump }
+          containers:
+            - name: restic
+              image: restic/restic:0.17.3
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  restic unlock
+                  restic backup /dump /data \
+                    --exclude '/data/db.sqlite3*' \
+                    --exclude /data/icon_cache \
+                    --exclude /data/tmp \
+                    --tag vaultwarden
+                  restic forget --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune
+              env:
+                - name: RESTIC_REPOSITORY
+                  value: /repo
+                - name: RESTIC_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: restic-password
+                      key: RESTIC_PASSWORD
+              resources:
+                requests: { cpu: 50m, memory: 128Mi }
+                limits: { memory: 512Mi }
+              volumeMounts:
+                - { name: data, mountPath: /data, readOnly: true }
+                - { name: dump, mountPath: /dump }
+                - { name: repo, mountPath: /repo }
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: vaultwarden-data-pvc
+            - name: dump
+              emptyDir: {}
+            - name: repo
+              nfs:
+                server: 192.168.0.202
+                path: /volume1/homelab-backups/vaultwarden
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: restic-password
+  namespace: vaultwarden
+spec:
+  encryptedData:
+    RESTIC_PASSWORD: AgAc8QHgCbah5A8BmM+3A5ra83ltTCAYzQ8c57sg+FazQhCkiOQ3AkRcgzolJ5r/2eUmyhoSXRdrDulPkCDPiKzKgjQkiiTYtueI25w3E91pVNy6z3jHetq8BRqX5JzvwTlCe+XFLJEUSr2zSGIPLMfyLYk8tH85OrMfldLITpWhPWtwLWPgMg4lc+N0YgjhBV3OFQ0oR+d0e927hQ4zB0P+RlKLkqmVRPPY/YKwgKewuDCXCxdbhW2fotEUJgglk1jh61NLQhwY5Gtn2Y48B2SmU12y82Sn8IbOfB0lN+3kBO6GwdwwBh85ez2gtISzhOGkcYeX75j74EHjDOiZ7sdKKQlswA8dg6eOyM9hTI1mwsd/e3Aj8DNt/vstDXgoZTs40r7CxeVs8dPP47nuSLc0vON1LuDYSzLL9DKA6yC1eQYZTUiNhFV9cGG9pCYde7QEWfTBuXYH3EKy/9GJvsfGm5TzCRu+Bw53vfGU+6yszaQEXnc86GE5fsU8D1UA7elCBQZ8NCKpycKhfCXKJTIPNiXipPlu1TKz1DfptMWPCkQbSAdGWnMJL9ycHHDZsOw/Up9nOPoFzWEX/RMHUlS5BoMplmhLx5uQNyUPSvnTC7F/toIcM3jBTWQYipubxC0dKh31/EYjqUygDqQnzzTNlq5/ngTKcdI7iZAyonv9sbY7sqwUo/rw+YWmmvf6k0zpZprA1mb8CZhjNFqkifb5ZwT8Y3FD1F2mQWcVFpnSIGFrfKqMDP8bNwAqnw==
+  template:
+    metadata:
+      creationTimestamp: null
+      name: restic-password
+      namespace: vaultwarden
+---
